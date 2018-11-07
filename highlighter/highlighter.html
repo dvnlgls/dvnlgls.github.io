@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sherlock</title>
+  <style>
+    em {
+      background-color: #ffe100;
+      font-weight: bold;
+      font-style: normal;
+      color: #052669;
+    }
+
+    .wrapper {
+      justify-self: center;
+      display: grid;
+      grid-row-gap: 10px;
+      width: 50%;
+      margin-bottom: 100px;
+    }
+
+    body {
+      display: grid;
+      font-family: sans-serif;
+    }
+
+    .title {
+      justify-self: center;
+      margin-top: 35px;
+      font-size: 35px;
+      letter-spacing: 7px;
+      color: #1850da;
+      border-bottom: 1px solid #a4bbf5;
+    }
+
+    .sub-title {
+      justify-self: center;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .btn-grp {
+      justify-self: right;
+      margin-left: -10px;
+    }
+
+    .btn {
+      background: #0a4ace;
+      padding: 0 16px;
+      height: 40px;
+      text-align: center;
+      min-width: 72px;
+      color: white;
+      letter-spacing: 1px;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 40px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0);
+      outline: none;
+    }
+
+    .btn:hover {
+      background-color: #0741b9;
+      border: 1px solid rgba(255, 255, 255, 0);
+      box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .disabled {
+      background: #95969a;
+    }
+
+    .disabled:hover {
+      background: #95969a;
+      border: none;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    input[type="text"], textarea {
+      border: 1px solid #abbadc;
+      border-radius: 3px;
+      outline: none;
+      font-size: 14px;
+      width: 100%;
+      padding: 0 5px;
+      font-family: monospace;
+
+    }
+
+    #searchStr {
+      height: 35px;
+    }
+
+    .show {
+      display: block;
+    }
+
+    .hide {
+      display: none;
+    }
+
+    .output {
+      margin-top: 20px;
+      color: #0034b1;
+    }
+
+    #result {
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: #1247b3;
+      border-top: 1px dotted #18449e78;
+      padding: 10px 0;
+      margin-top: 2px;
+      margin-bottom: 20px;
+    }
+
+    #showHtml {
+      font-family: monospace;
+      cursor: pointer;
+      font-size: 15px;
+      border-bottom: 1px solid;
+    }
+    
+    .pre {
+      background-color: #eff0f1;
+      padding: 5px;
+      border: 1px solid #eaeaea;
+      color: black;
+      font-size: 16px;
+      letter-spacing: 0.25px;
+      font-family: monospace;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="title">
+      S.H.E.R.L.O.C.K
+    </div>
+    <div class="sub-title">
+      Highlight needles in haystack
+    </div>
+    <div>
+      <textarea placeholder="Input" rows="4" cols="50" id="inputStr" onchange="onInputChange()" onkeypress="this.onchange();"
+        onpaste="this.onchange();" oninput="this.onchange();"></textarea>
+    </div>
+    <div>
+      <input placeholder="Search term(s)" type="text" id="searchStr" onchange="onSearchChange()" onkeypress="this.onchange();"
+        onpaste="this.onchange();" oninput="this.onchange();" />
+    </div>
+    <div class="btn-grp">
+      <button id="btnReset" class="btn reset disabled" onclick="reset()">Reset</button>
+      <button id="btnHighlight" class="btn primary disabled" onclick="onHighlight()">Highlight</button>
+    </div>
+    <div id="resultWrap" class="output hide">
+      <span>Formatted result:</span>
+      <div id="result"></div>
+      <span id="showHtml" onclick="showHtml()">Show HTML result</span>
+      <div class="pre" id="htmlResult" class="hide"></div>
+    </div>
+  </div>
+
+  <script src="highlighter.js?v=1"></script>
+  <script>
+    var input = document.getElementById('inputStr');
+    var searchStr = document.getElementById('searchStr');
+
+    var btnHighlight = document.getElementById('btnHighlight');
+    var btnReset = document.getElementById('btnReset');
+
+    var resultWrap = document.getElementById('resultWrap');
+    var result = document.getElementById('result');
+
+    var htmlResult = document.getElementById('htmlResult');
+    var showHtmlToggleText = document.getElementById('showHtml');
+
+    var highlightTag = 'em';
+    var showHtmlToggle = false;
+
+    var hasInput = false;
+    var hasSearchStr = false;
+
+    init();
+
+    function init() {
+      input.focus();
+
+      if (input.value && searchStr.value) {
+        btnHighlight.classList.remove('disabled');
+        btnReset.classList.remove('disabled');
+      }
+
+      searchStr.addEventListener('keydown', (event) => {
+        captureKey(event);
+      })
+    }
+
+    function onInputChange() {
+      var inputVal = input.value;
+      if (inputVal && inputVal.trim() !== '') {
+        hasInput = true;
+        btnHighlight.classList.remove('disabled');
+        btnReset.classList.remove('disabled');
+      } else {
+        hasInput = false;
+        btnHighlight.classList.add('disabled');
+        btnReset.classList.add('disabled');
+      }
+    }
+
+    function onSearchChange() {
+      var inputVal = searchStr.value;
+      if (inputVal && inputVal.trim() !== '') {
+        hasSearchStr = true;
+        btnHighlight.classList.remove('disabled');
+        btnReset.classList.remove('disabled');
+      } else {
+        hasSearchStr = false;
+        btnHighlight.classList.add('disabled');
+        btnReset.classList.add('disabled');
+      }
+    }
+
+    function captureKey(event) {
+      if (event && event.keyCode === 13) { // enter key
+        onHighlight();
+      }
+    }
+
+    function onHighlight() {
+      if (hasInput && hasSearchStr) {
+        var formattedStr = highlighter(input.value, searchStr.value, highlightTag);
+        console.log(formattedStr);
+
+        result.innerHTML = formattedStr
+        htmlResult.textContent = formattedStr;
+        resultWrap.className = 'output show';
+      }
+    }
+
+    function showHtml() {
+      if (!showHtmlToggle) {
+        htmlResult.textContent = result.innerHTML;
+        htmlResult.classList.remove('hide');
+        htmlResult.classList.add('show');
+        showHtmlToggleText.textContent = 'Hide HTML result'
+        showHtmlToggle = true;
+      } else {
+        htmlResult.textContent = '';
+        htmlResult.classList.remove('show');
+        htmlResult.classList.add('hide');
+        showHtmlToggleText.textContent = 'Show HTML result'
+        showHtmlToggle = false;
+      }
+    }
+
+    function reset() {
+      input.value = '';
+      searchStr.value = '';
+      result.innerHTML = '';
+      htmlResult.textContent = '';
+      resultWrap.className = 'output hide';
+
+      btnHighlight.classList.add('disabled');
+      btnReset.classList.add('disabled');
+
+      hasInput = false;
+      hasSearchStr = false;
+
+      input.focus();
+    }
+  </script>
+</body>
+
+</html>
